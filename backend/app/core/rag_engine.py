@@ -39,18 +39,18 @@ class RAGEngine:
     def llm(self) -> BaseLLM:
         """Lazy load LLM"""
         if self._llm is None:
-            from app.llm.llama_cpp_llm import LlamaCppLLM
+            from app.llm.gemini_llm import GeminiLLM
             logger.info("Lazy loading LLM...")
-            self._llm = LlamaCppLLM()
+            self._llm = GeminiLLM()
         return self._llm
     
     @property
     def retriever(self) -> BaseRetriever:
         """Lazy load retriever"""
         if self._retriever is None:
-            from app.retriever.faiss_retriever import FAISSRetriever
-            logger.info("Lazy loading retriever...")
-            self._retriever = FAISSRetriever()
+            from app.retriever.chroma_retriever import ChromaRetriever
+            logger.info("Lazy loading ChromaDB retriever...")
+            self._retriever = ChromaRetriever()
         return self._retriever
     
     def generate(self, query: str) -> Dict[str, Any]:

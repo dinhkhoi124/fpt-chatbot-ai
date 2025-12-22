@@ -17,15 +17,16 @@ class Settings(BaseSettings):
     
     # Paths
     BASE_DIR: Path = Path(__file__).parent.parent
-    MODEL_PATH: Path = BASE_DIR / "models"
     VECTORSTORE_PATH: Path = BASE_DIR / "vectorstore"
+    CHROMA_DB_PATH: Path = BASE_DIR / "app" / "vector_db"
+    CHROMA_COLLECTION_NAME: str = "fpt_university"
     
-    # LLM Settings
-    MODEL_NAME: str = "Phi-3-mini-4k-instruct-q4.gguf"
-    MAX_TOKENS: int = 512
-    TEMPERATURE: float = 0.3
-    TOP_P: float = 0.9
-    GPU_LAYERS: int = 32  # For GPU ≤ 4GB (Phi-3 mini optimized)
+    # Cloud LLM Settings
+    GEMINI_API_KEY: str = ""
+    LLM_MODEL: str = "gemini-2.0-flash-exp"
+    EMBEDDING_MODEL: str = "text-embedding-004"
+    MAX_TOKENS: int = 2048
+    TEMPERATURE: float = 0.7
     
     # RAG Settings
     TOP_K: int = 5
@@ -35,7 +36,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     
     class Config:
-        env_file = ".env"
+        env_file = str(Path(__file__).parent.parent / ".env")
         case_sensitive = True
 
 

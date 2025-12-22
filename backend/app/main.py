@@ -32,8 +32,8 @@ app.include_router(chat.router, prefix="/api", tags=["chat"])
 async def startup_event():
     """Initialize services on startup"""
     logger.info("Starting FPT Chatbot AI Backend...")
-    logger.info(f"Model path: {settings.MODEL_PATH}")
-    logger.info(f"Vector store path: {settings.VECTORSTORE_PATH}")
+    logger.info(f"ChromaDB path: {settings.CHROMA_DB_PATH}")
+    logger.info(f"LLM Model: {settings.LLM_MODEL}")
 
 
 @app.on_event("shutdown")

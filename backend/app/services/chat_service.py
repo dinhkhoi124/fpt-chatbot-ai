@@ -40,13 +40,24 @@ class ChatService:
         """
         logger.info(f"Processing message: {message[:50]}...")
         
-        # TODO: Implement full RAG pipeline
-        # For now, return a placeholder response
-        return ChatResponse(
-            answer="Xin chào! Hệ thống đang được khởi tạo. Vui lòng quay lại sau.",
-            sources=[],
-            metadata={
-                "model": "placeholder",
-                "tokens_used": 0
-            }
-        )
+        try:
+            # Execute RAG pipeline
+            result = self.rag_engine.generate(message)
+            
+            return ChatResponse(
+                answer=result["answer"],
+                sources=result["sources"],
+                metadata={
+                    "model": "gemini",
+                    "num_sources": result["num_sources"]
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error processing message: {e}")
+            return ChatResponse(
+                answer="Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.",
+                sources=[],
+                metadata={
+                    "error": str(e)
+                }
+            )
