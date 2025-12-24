@@ -4,6 +4,7 @@ import chromadb
 from chromadb.config import Settings as ChromaSettings
 
 from app.retriever.base import BaseRetriever
+from app.embeddings.sentence_transformer_embedder import SentenceTransformerEmbedder
 from app.embeddings.gemini_embedder import GeminiEmbedder
 from app.config import settings
 from app.utils.logger import get_logger
@@ -24,7 +25,7 @@ class ChromaRetriever(BaseRetriever):
     
     def __init__(
         self,
-        embedder: Optional[GeminiEmbedder] = None,
+        embedder = None,
         db_path: str = None,
         collection_name: str = None
     ):
@@ -32,11 +33,22 @@ class ChromaRetriever(BaseRetriever):
         Initialize ChromaDB retriever
         
         Args:
-            embedder: Embedding model (default: GeminiEmbedder)
+            embedder: Embedding model (default: auto-select from config)
             db_path: Path to ChromaDB directory (default from settings)
             collection_name: Collection name (default from settings)
         """
-        self.embedder = embedder or GeminiEmbedder()
+        # Auto-select embedder based on config if not provided
+        if embedder is None:
+            embedding_type = getattr(settings, 'EMBEDDING_TYPE', 'sentence-transformers')
+            if embedding_type == 'sentence-transformers':
+                self.embedder = SentenceTransformerEmbedder()
+                logger.info("Using SentenceTransformerEmbedder (matches ai/ logic)")
+            else:
+                self.embedder = GeminiEmbedder()
+                logger.info("Using GeminiEmbedder")
+        else:
+            self.embedder = embedder
+        
         self.db_path = str(db_path or settings.CHROMA_DB_PATH)
         self.collection_name = collection_name or settings.CHROMA_COLLECTION_NAME
         
@@ -66,16 +78,16 @@ class ChromaRetriever(BaseRetriever):
     def search(
         self,
         query: str,
-        top_k: int = None,
-        score_threshold: float = None
+        top_k: int = None
     ) -> List[Dict[str, Any]]:
         """
         Search for relevant documents using semantic similarity
         
+        Matches ai/rag_system.py logic - no threshold filtering, just top_k
+        
         Args:
             query: Search query text
             top_k: Number of results to return (default from settings)
-            score_threshold: Minimum similarity score (default from settings)
             
         Returns:
             List of documents with content and metadata
@@ -86,7 +98,6 @@ class ChromaRetriever(BaseRetriever):
             return []
         
         top_k = top_k or settings.TOP_K
-        score_threshold = score_threshold or settings.SCORE_THRESHOLD
         
         try:
             # Generate query embedding
@@ -100,7 +111,7 @@ class ChromaRetriever(BaseRetriever):
                 include=["documents", "metadatas", "distances"]
             )
             
-            # Process results
+            # Process results - NO FILTERING, return all top_k results (matches ai/ logic)
             documents = []
             if results and results['documents'] and results['documents'][0]:
                 for i, (doc, metadata, distance) in enumerate(zip(
@@ -108,21 +119,21 @@ class ChromaRetriever(BaseRetriever):
                     results['metadatas'][0],
                     results['distances'][0]
                 )):
-                    # Convert distance to similarity score (ChromaDB uses L2 distance)
-                    # Lower distance = higher similarity
-                    # Convert to 0-1 scale where 1 is most similar
-                    score = 1.0 / (1.0 + distance)
+                    # ChromaDB with cosine similarity returns distance in [0, 2] range
+                    # where 0 = identical, 2 = opposite
+                    # Convert to similarity score: similarity = 1 - (distance / 2)
+                    # This gives us a score in [0, 1] where 1 is most similar
+                    score = 1.0 - (distance / 2.0)
                     
-                    # Apply score threshold
-                    if score >= score_threshold:
-                        documents.append({
-                            "content": doc,
-                            "metadata": metadata or {},
-                            "score": score
-                        })
-                        logger.debug(f"Document {i+1}: score={score:.3f}, length={len(doc)}")
+                    # Always add document - no threshold filtering (matches ai/rag_system.py)
+                    documents.append({
+                        "content": doc,
+                        "metadata": metadata or {},
+                        "score": score
+                    })
+                    logger.debug(f"Document {i+1}: score={score:.3f}, distance={distance:.3f}, length={len(doc)}")
             
-            logger.info(f"Retrieved {len(documents)} documents (threshold: {score_threshold})")
+            logger.info(f"Retrieved {len(documents)} documents")
             return documents
             
         except Exception as e:

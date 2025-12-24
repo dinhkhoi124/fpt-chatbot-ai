@@ -24,13 +24,17 @@ class Settings(BaseSettings):
     # Cloud LLM Settings
     GEMINI_API_KEY: str = ""
     LLM_MODEL: str = "gemini-2.0-flash-exp"
-    EMBEDDING_MODEL: str = "text-embedding-004"
     MAX_TOKENS: int = 2048
     TEMPERATURE: float = 0.7
     
+    # Embedding Settings
+    # Options: "sentence-transformers" (local, optimized for Vietnamese) or "gemini" (cloud API)
+    EMBEDDING_TYPE: str = "sentence-transformers"
+    EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+    GEMINI_EMBEDDING_MODEL: str = "text-embedding-004"  # Used only if EMBEDDING_TYPE is "gemini"
+    
     # RAG Settings
     TOP_K: int = 5
-    SCORE_THRESHOLD: float = 0.7
     
     # Logging
     LOG_LEVEL: str = "INFO"

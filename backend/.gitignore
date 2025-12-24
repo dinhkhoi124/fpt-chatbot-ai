@@ -69,3 +69,7 @@ Task.md
 
 # Vector database (Chroma)
 app/vector_db/
+
+# Testing files
+tests/
+.pytest_cache/
